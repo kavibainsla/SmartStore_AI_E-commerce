@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useToast } from '../context/ToastContext';
-import { HiOutlineShoppingCart, HiOutlineSparkles, HiOutlineTag, HiOutlineCheck, HiOutlineInbox } from 'react-icons/hi2';
+import { HiOutlineShoppingCart, HiOutlineSparkles, HiOutlineTag, HiOutlineCheck, HiOutlineInbox, HiOutlineXMark } from 'react-icons/hi2';
 
 export default function CustomerStore() {
   const { user } = useAuth();
@@ -62,7 +62,7 @@ export default function CustomerStore() {
   // Cart Handlers
   const handleAddToCart = (product, e) => {
     if (e) e.stopPropagation(); // Prevent detail modal triggers
-    
+
     // Check stock limit
     if (product.stock <= 0) {
       toast.error('Product is out of stock!');
@@ -73,17 +73,26 @@ export default function CustomerStore() {
       const exists = prev.find((item) => item._id === product._id);
       if (exists) {
         if (exists.quantity >= product.stock) {
-          toast.error('Cannot add more items than available stock!');
-          return prev;
+          return prev; // toast shown below
         }
-        toast.success(`Updated ${product.name} quantity!`);
         return prev.map((item) =>
           item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      toast.success(`Added ${product.name} to cart!`);
       return [...prev, { ...product, quantity: 1 }];
     });
+
+    // Show toast ONCE — outside setCart so React Strict Mode doesn't double-fire it
+    const alreadyInCart = cart.find((item) => item._id === product._id);
+    if (alreadyInCart) {
+      if (alreadyInCart.quantity >= product.stock) {
+        toast.error('Cannot add more items than available stock!');
+      } else {
+        toast.success(`Updated ${product.name} quantity!`);
+      }
+    } else {
+      toast.success(`Added ${product.name} to cart!`);
+    }
   };
 
   const handleUpdateQuantity = (id, quantity) => {
@@ -114,9 +123,10 @@ export default function CustomerStore() {
   const filteredProducts = products
     .filter((product) => {
       const matchesSearch =
-        product.name.toLowerCase().includes(searchVal.toLowerCase()) ||
+        product.name?.toLowerCase().includes(searchVal.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchVal.toLowerCase()) ||
-        (Array.isArray(product.tags) && product.tags.some((t) => t.toLowerCase().includes(searchVal.toLowerCase())));
+        product.category?.toLowerCase().includes(searchVal.toLowerCase()) ||
+        (Array.isArray(product.tags) && product.tags.some((t) => t?.toLowerCase().includes(searchVal.toLowerCase())));
       const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
       return matchesSearch && matchesCategory;
     })
@@ -179,18 +189,29 @@ export default function CustomerStore() {
               {heroProducts[0] && (
                 <div 
                   onClick={() => setSelectedProduct(heroProducts[0])}
-                  className="glass-card bg-white/5 border-white/10 p-6 md:max-w-md ml-auto w-full cursor-pointer hover:border-brand-500/50 hover:bg-white/10 transition group"
+                  className="glass-card bg-white/5 border-white/10 p-5 md:max-w-md ml-auto w-full cursor-pointer hover:border-brand-500/50 hover:bg-white/10 transition group"
                 >
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="flex justify-between items-center mb-3">
                     <span className="rounded-full bg-brand-600 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
                       🔥 AI Hot Pick
                     </span>
-                    <span className="text-xs font-black text-brand-400 group-hover:underline">View Product Details →</span>
+                    <span className="text-xs font-black text-brand-400 group-hover:underline">View Details →</span>
                   </div>
-                  <h3 className="text-lg font-black text-white">{heroProducts[0].name}</h3>
-                  <p className="mt-2 text-xs text-slate-300 line-clamp-2">{heroProducts[0].description}</p>
-                  <div className="mt-6 flex justify-between items-center border-t border-white/5 pt-4">
-                    <span className="text-2xl font-black text-white">${heroProducts[0].price}</span>
+                  {/* Hero product image */}
+                  {heroProducts[0].image && (
+                    <div className="mb-3 h-32 w-full overflow-hidden rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center p-2">
+                      <img
+                        src={heroProducts[0].image}
+                        alt={heroProducts[0].name}
+                        className="max-h-full max-w-full object-contain opacity-95 group-hover:scale-110 transition-transform duration-500"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </div>
+                  )}
+                  <h3 className="text-base font-black text-white line-clamp-1">{heroProducts[0].name}</h3>
+                  <p className="mt-1 text-xs text-slate-300 line-clamp-2">{heroProducts[0].description}</p>
+                  <div className="mt-4 flex justify-between items-center border-t border-white/5 pt-3">
+                    <span className="text-2xl font-black text-white">₹{heroProducts[0].price}</span>
                     <button
                       onClick={(e) => handleAddToCart(heroProducts[0], e)}
                       className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white text-slate-900 px-4 py-2 text-xs font-bold shadow-md hover:bg-slate-100 transition active:scale-95"
@@ -275,7 +296,7 @@ export default function CustomerStore() {
                 <div
                   key={product._id}
                   onClick={() => setSelectedProduct(product)}
-                  className="glass-card-light dark:glass-card cursor-pointer p-5 flex flex-col justify-between h-[360px] hover:border-brand-500/30 transition group duration-300 relative overflow-hidden"
+                  className="glass-card-light dark:glass-card cursor-pointer p-5 flex flex-col justify-between hover:border-brand-500/30 transition group duration-300 relative overflow-hidden"
                 >
                   <div>
                     {/* Badge row */}
@@ -298,11 +319,30 @@ export default function CustomerStore() {
                       )}
                     </div>
 
-                    {/* Thumbnail and Title */}
-                    <div className="flex gap-4 items-start">
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-brand-600/10 text-xl font-black text-brand-600 dark:bg-brand-500/20 group-hover:scale-105 transition-transform duration-300">
-                        {product.name.charAt(0)}
+                    {/* Product Image and Title */}
+                    <div className="space-y-3">
+                      {/* Product Image */}
+                      <div className="relative h-36 w-full overflow-hidden rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center p-3 border border-slate-100 dark:border-slate-800 transition-all duration-300">
+                        {product.image ? (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-110"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          style={{ display: product.image ? 'none' : 'flex' }}
+                          className="absolute inset-0 items-center justify-center text-3xl font-black text-brand-600/40 dark:text-brand-400/40"
+                        >
+                          {product.name.charAt(0)}
+                        </div>
                       </div>
+                      {/* Title and Rating */}
                       <div className="space-y-1">
                         <h3 className="text-xs font-black leading-snug text-slate-900 dark:text-white line-clamp-2 group-hover:text-brand-500 dark:group-hover:text-brand-400 transition-colors">
                           {product.name}
@@ -324,7 +364,7 @@ export default function CustomerStore() {
                   <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800/80 flex items-center justify-between">
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase">Store Price</p>
-                      <p className="text-lg font-black text-slate-950 dark:text-white">${product.price}</p>
+                      <p className="text-lg font-black text-slate-950 dark:text-white">₹{product.price}</p>
                     </div>
                     <button
                       onClick={(e) => handleAddToCart(product, e)}
@@ -362,7 +402,19 @@ export default function CustomerStore() {
             <div className="grid grid-cols-1 lg:grid-cols-12 max-h-[85vh] overflow-y-auto">
               
               {/* Product Details Section */}
-              <div className="lg:col-span-7 p-6 sm:p-8 space-y-6 overflow-y-auto">
+              <div className="lg:col-span-7 p-6 sm:p-8 space-y-5 overflow-y-auto">
+                {/* Product Image */}
+                {selectedProduct.image && (
+                  <div className="relative h-72 w-full overflow-hidden rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center p-4 border border-slate-150 dark:border-slate-800">
+                    <img
+                      src={selectedProduct.image}
+                      alt={selectedProduct.name}
+                      className="max-h-full max-w-full object-contain transition-transform duration-500 hover:scale-110"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  </div>
+                )}
+
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-brand-100 px-3 py-1 text-[10px] font-black uppercase text-brand-700 dark:bg-brand-900/30 dark:text-brand-400">
                     📂 {selectedProduct.category}
@@ -411,7 +463,7 @@ export default function CustomerStore() {
                 <div className="border-t border-slate-100 pt-6 dark:border-slate-800/80 flex items-center justify-between">
                   <div>
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Verified Market Value</p>
-                    <p className="text-3xl font-black text-slate-900 dark:text-white">${selectedProduct.price}</p>
+                    <p className="text-3xl font-black text-slate-900 dark:text-white">₹{selectedProduct.price}</p>
                   </div>
                   <button
                     onClick={() => {
