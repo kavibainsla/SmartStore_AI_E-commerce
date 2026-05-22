@@ -18,22 +18,28 @@ const getOpenAI = () => {
 };
 
 /** Google Gemini via REST API (no extra npm package required) */
-const generateWithGemini = async (systemPrompt, userPrompt, maxTokens = 2048) => {
+const generateWithGemini = async (systemPrompt, userPrompt, maxTokens = 2048, useSearch = false) => {
   if (!config.geminiApiKey) throw new Error('GEMINI_API_KEY is not configured');
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${config.geminiModel}:generateContent?key=${config.geminiApiKey}`;
   const prompt = `${systemPrompt}\n\n---\n\n${userPrompt}`;
 
+  const body = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+      temperature: useSearch ? 0.2 : 0.7,
+    },
+  };
+
+  if (useSearch) {
+    body.tools = [{ googleSearch: {} }];
+  }
+
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        maxOutputTokens: maxTokens,
-        temperature: 0.7,
-      },
-    }),
+    body: JSON.stringify(body),
   });
 
   const data = await response.json();
@@ -58,9 +64,9 @@ const generateWithOpenAI = async (systemPrompt, userPrompt, maxTokens = 2048) =>
   return response.choices[0]?.message?.content?.trim() || '';
 };
 
-export const generateText = async (systemPrompt, userPrompt, maxTokens = 2048) => {
+export const generateText = async (systemPrompt, userPrompt, maxTokens = 2048, useSearch = false) => {
   const provider = getActiveProvider();
-  if (provider === 'gemini') return { text: await generateWithGemini(systemPrompt, userPrompt, maxTokens), provider };
+  if (provider === 'gemini') return { text: await generateWithGemini(systemPrompt, userPrompt, maxTokens, useSearch), provider };
   if (provider === 'openai') return { text: await generateWithOpenAI(systemPrompt, userPrompt, maxTokens), provider };
   throw new Error('No AI provider configured');
 };
@@ -195,6 +201,31 @@ Return JSON with exactly these keys:
 
 // ─── Mock fallbacks ───────────────────────────────────────────────
 
+export const fetchRealProductData = async (query) => {
+  const { text } = await generateText(
+    'You are an expert e-commerce product crawler and researcher. Your job is to search the web for actual, real-world product information based on a search query. Retrieve real specifications, standard manufacturer descriptions, actual retail prices, and standard categorization. You MUST return ONLY valid JSON, no markdown fences.',
+    `Search the web for real-world details about: "${query}"
+
+Return a JSON object with exactly these keys and real data:
+{
+  "name": "Correct, clean real-world brand name and model (e.g. Sony WH-1000XM5 Wireless Headphones)",
+  "category": "The standard e-commerce category (e.g. Electronics, Home & Kitchen, Sports & Outdoors)",
+  "price": 299.99 (the actual average retail price in USD as a float number),
+  "description": "A professional, accurate, and appealing product description (150-250 words) based on actual manufacturer data and key selling points",
+  "tags": ["array", "of", "10", "standard", "seo", "tags", "matching", "this", "product"],
+  "stock": 50,
+  "keyFeatures": ["Actual specifications and real features of this product (at least 5 items)"],
+  "imageSuggestions": "Detailed description of what the official product photo looks like (e.g. Studio shot of black headphones at a 45-degree angle)"
+}`,
+    4096,
+    true // enable Google Search Grounding!
+  );
+
+  return parseJsonFromText(text);
+};
+
+// ─── Mock fallbacks ───────────────────────────────────────────────
+
 export const mockAIResponse = (type, data) => {
   const mocks = {
     description: `Introducing ${data.name} — a premium ${data.category} product crafted for quality and value. Ideal for customers who want reliability at $${data.price}. Features excellent build quality, great customer reviews potential, and strong market fit in the ${data.category} segment.`,
@@ -203,6 +234,22 @@ export const mockAIResponse = (type, data) => {
     adCopy: `${data.name} — ${data.category} excellence. Only $${data.price}. Shop SmartStore AI now!`,
     socialPromo: `✨ New arrival: ${data.name}! Premium ${data.category} for $${data.price}. Tap the link in bio! #${(data.category || 'shop').replace(/\s/g, '')} #SmartStore #Deals`,
     insights: `## Executive Summary\nStore has ${data.totalProducts || 'multiple'} products with revenue opportunities.\n\n## Pricing Recommendations\nReview margin on top sellers; test bundle pricing.\n\n## Trending Products\nFocus marketing on ${data.category || 'top'} category.\n\n## Low-Performing Products\nImprove descriptions and images for inactive SKUs.\n\n## Inventory Restock\nRestock low inventory items (${data.lowStockCount || 0} alerts).\n\n## Growth\nRun email campaigns and social ads for best sellers.`,
+    realProduct: {
+      name: `${data.name} (Premium Edition)`,
+      category: data.category || 'Electronics',
+      price: data.price || 149.99,
+      description: `This is a premium, grounded real-world product description for "${data.name}". Exceptionally built with advanced capabilities and designed to blend performance and style. It is the perfect choice for anyone looking for standard-setting reliability in the ${data.category} space.`,
+      tags: [data.category || 'Electronics', 'premium', 'high-tech', 'reliable', 'top-rated', 'featured'],
+      stock: 50,
+      keyFeatures: [
+        'Built with premium industry-grade materials',
+        'State-of-the-art intelligent processing technology',
+        'Enhanced energy efficiency and battery life',
+        'Sleek modern aesthetics and ergonomic footprint',
+        'Fully covered by 2-year manufacturer warranty'
+      ],
+      imageSuggestions: 'Official product press shot on an elegant light-grey studio background.'
+    },
     fullInfo: {
       description: `Introducing ${data.name} — premium ${data.category} at $${data.price}.`,
       tags: [data.category, 'premium', 'bestseller', 'trending'],

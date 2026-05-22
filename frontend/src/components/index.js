@@ -21,3 +21,5 @@ export { InventoryOverview } from './InventoryOverview';
 export { AIGenerateButton } from './AIGenerateButton';
 export { AIContentPanel } from './AIContentPanel';
 export { ProductAIFullInfo } from './ProductAIFullInfo';
+export { GeminiProductSearch } from './GeminiProductSearch';
+

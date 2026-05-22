@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { aiService } from '../services/aiService';
 import { AIGenerateButton } from './AIGenerateButton';
 import { ProductAIFullInfo } from './ProductAIFullInfo';
+import { GeminiProductSearch } from './GeminiProductSearch';
 
 const emptyForm = {
   name: '',
@@ -36,6 +37,20 @@ export const ProductForm = ({ initial, onSubmit, onCancel, loading }) => {
     if (info.tags?.length) update('tags', info.tags.join(', '));
   };
 
+  const handleAutofill = (data) => {
+    if (!data) return;
+    setForm((f) => ({
+      ...f,
+      name: data.name || f.name,
+      category: data.category || f.category,
+      price: data.price !== undefined ? data.price.toString() : f.price,
+      description: data.description || f.description,
+      stock: data.stock !== undefined ? data.stock.toString() : f.stock,
+      tags: data.tags ? (Array.isArray(data.tags) ? data.tags.join(', ') : data.tags) : f.tags,
+      status: 'active',
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
@@ -50,6 +65,7 @@ export const ProductForm = ({ initial, onSubmit, onCancel, loading }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {!initial?._id && <GeminiProductSearch onAutofill={handleAutofill} />}
       <ProductAIFullInfo payload={aiPayload()} onApplyAll={applyFullInfo} />
 
       <div className="grid gap-4 sm:grid-cols-2">

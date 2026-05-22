@@ -9,6 +9,7 @@ export {
   generateSocialPromo,
   generateSalesInsights,
   generateFullProductInfo,
+  fetchRealProductData,
   mockAIResponse,
   safeAI,
   getActiveProvider,

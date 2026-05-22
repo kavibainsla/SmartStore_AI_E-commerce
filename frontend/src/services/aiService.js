@@ -8,5 +8,6 @@ export const aiService = {
   generateAdCopy: (data) => api.post('/ai/generate-ad-copy', data),
   generateSocial: (data) => api.post('/ai/generate-social', data),
   generateFullInfo: (data) => api.post('/ai/generate-full-info', data),
+  fetchRealProduct: (query) => api.post('/ai/fetch-real-product', { query }),
   salesInsights: () => api.post('/ai/sales-insights'),
 };

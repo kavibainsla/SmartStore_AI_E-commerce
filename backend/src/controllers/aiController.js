@@ -8,6 +8,7 @@ import {
   generateSocialPromo,
   generateSalesInsights,
   generateFullProductInfo,
+  fetchRealProductData,
   safeAI,
   getAIStatus,
 } from '../services/openaiService.js';
@@ -150,4 +151,19 @@ export const salesInsights = asyncHandler(async (req, res) => {
       businessData: businessData.summary,
     })
   );
+});
+
+export const fetchRealProductDataRoute = asyncHandler(async (req, res) => {
+  const { query } = req.body;
+  if (!query) {
+    return res.status(400).json({ success: false, message: 'Search query is required' });
+  }
+
+  const result = await safeAI(
+    () => fetchRealProductData(query),
+    'realProduct',
+    { name: query, category: 'Electronics', price: 99.99 }
+  );
+
+  res.json(wrap(result, { product: result.content }));
 });
