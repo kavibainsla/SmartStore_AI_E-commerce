@@ -9,6 +9,7 @@ import Products from '../pages/Products';
 import Analytics from '../pages/Analytics';
 import AIInsights from '../pages/AIInsights';
 import Settings from '../pages/Settings';
+import Customers from '../pages/Customers';
 import CustomerStore from '../pages/CustomerStore';
 import CustomerOrders from '../pages/CustomerOrders';
 
@@ -24,6 +25,7 @@ export const AppRoutes = () => (
       <Route path="/analytics" element={<Analytics />} />
       <Route path="/ai-insights" element={<AIInsights />} />
       <Route path="/settings" element={<Settings />} />
+      <Route path="/customers" element={<Customers />} />
     </Route>
     <Route
       path="/"

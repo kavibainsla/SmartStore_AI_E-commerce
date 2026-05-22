@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Order from '../models/Order.js';
 import { generateToken } from '../middleware/auth.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -52,4 +53,27 @@ export const updateSettings = asyncHandler(async (req, res) => {
     { new: true, runValidators: true }
   );
   res.json({ success: true, data: user });
+});
+
+export const getCustomers = asyncHandler(async (req, res) => {
+  if (req.user.role === 'customer') {
+    return res.status(403).json({ success: false, message: 'Forbidden. Admin access required.' });
+  }
+
+  const customers = await User.find({}).select('name email role createdAt avatar settings').lean();
+
+  const customersWithOrders = await Promise.all(
+    customers.map(async (customer) => {
+      const orders = await Order.find({ customer: customer._id }).sort({ createdAt: -1 }).lean();
+      const totalSpent = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+      return {
+        ...customer,
+        orders,
+        orderCount: orders.length,
+        totalSpent,
+      };
+    })
+  );
+
+  res.json({ success: true, data: customersWithOrders });
 });

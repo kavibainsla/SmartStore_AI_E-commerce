@@ -5,4 +5,5 @@ export const authService = {
   login: (data) => api.post('/auth/login', data),
   getMe: () => api.get('/auth/me'),
   updateSettings: (data) => api.put('/auth/settings', data),
+  getCustomers: () => api.get('/auth/customers'),
 };

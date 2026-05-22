@@ -11,6 +11,7 @@ const pageTitles = {
   '/analytics': 'Analytics',
   '/ai-insights': 'AI Insights',
   '/settings': 'Settings',
+  '/customers': 'Customers',
 };
 
 export const DashboardLayout = () => {

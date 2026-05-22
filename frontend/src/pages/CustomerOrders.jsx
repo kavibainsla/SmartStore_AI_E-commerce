@@ -123,7 +123,7 @@ export default function CustomerOrders() {
                       <div className="text-right sm:text-left">
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Paid Total</p>
                         <p className="text-xs font-black text-brand-600 dark:text-brand-400">
-                          ${order.total.toFixed(2)}
+                          ₹{order.total.toFixed(2)}
                         </p>
                       </div>
                       {isExpanded ? (
@@ -207,12 +207,12 @@ export default function CustomerOrders() {
                                       {item.name}
                                     </h5>
                                     <p className="text-[9px] text-slate-500 capitalize">
-                                      Qty: {item.quantity} × ${item.price}
+                                      Qty: {item.quantity} × ₹{item.price}
                                     </p>
                                   </div>
                                 </div>
                                 <span className="text-[11px] font-extrabold text-slate-950 dark:text-white">
-                                  ${item.price * item.quantity}
+                                  ₹{item.price * item.quantity}
                                 </span>
                               </div>
                             ))}
@@ -227,21 +227,21 @@ export default function CustomerOrders() {
                           <div className="space-y-1.5 text-[10px] text-slate-500">
                             <div className="flex justify-between">
                               <span>Subtotal</span>
-                              <span className="font-bold text-slate-900 dark:text-white">${order.subtotal.toFixed(2)}</span>
+                              <span className="font-bold text-slate-900 dark:text-white">₹{order.subtotal.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between">
                               <span>Autonomous Shipping</span>
                               <span className="font-bold text-slate-900 dark:text-white">
-                                {order.shipping === 0 ? 'FREE' : `$${order.shipping.toFixed(2)}`}
+                                {order.shipping === 0 ? 'FREE' : `₹${order.shipping.toFixed(2)}`}
                               </span>
                             </div>
                             <div className="flex justify-between">
                               <span>Tax (8%)</span>
-                              <span className="font-bold text-slate-900 dark:text-white">${order.tax.toFixed(2)}</span>
+                              <span className="font-bold text-slate-900 dark:text-white">₹{order.tax.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between border-t border-slate-100 pt-2 text-[11px] font-black dark:border-slate-800">
                               <span className="text-slate-900 dark:text-white">Invoice Total</span>
-                              <span className="text-brand-600 dark:text-brand-400">${order.total.toFixed(2)}</span>
+                              <span className="text-brand-600 dark:text-brand-400">₹{order.total.toFixed(2)}</span>
                             </div>
                           </div>
                           <div className="mt-3 border-t border-slate-100 pt-3 text-[9px] text-slate-400 dark:border-slate-800 space-y-1">

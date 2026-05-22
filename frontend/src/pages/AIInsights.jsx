@@ -80,7 +80,7 @@ export default function AIInsights() {
       {summary && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: 'Revenue', value: `$${summary.totalRevenue?.toLocaleString()}` },
+            { label: 'Revenue', value: `₹${summary.totalRevenue?.toLocaleString('en-IN')}` },
             { label: 'Sales', value: summary.totalSales },
             { label: 'Products', value: summary.totalProducts },
             { label: 'Low Stock', value: summary.lowStockCount },

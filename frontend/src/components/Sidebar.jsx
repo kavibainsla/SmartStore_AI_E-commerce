@@ -3,6 +3,7 @@ import {
   HiOutlineHome,
   HiOutlineCube,
   HiOutlineChartBar,
+  HiOutlineUsers,
   HiOutlineSparkles,
   HiOutlineCog6Tooth,
   HiOutlineXMark,
@@ -13,6 +14,7 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: HiOutlineHome },
   { to: '/products', label: 'Products', icon: HiOutlineCube },
   { to: '/analytics', label: 'Analytics', icon: HiOutlineChartBar },
+  { to: '/customers', label: 'Customers', icon: HiOutlineUsers },
   { to: '/ai-insights', label: 'AI Insights', icon: HiOutlineSparkles },
   { to: '/settings', label: 'Settings', icon: HiOutlineCog6Tooth },
 ];
