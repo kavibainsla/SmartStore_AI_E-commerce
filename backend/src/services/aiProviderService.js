@@ -24,30 +24,43 @@ const generateWithGemini = async (systemPrompt, userPrompt, maxTokens = 2048, us
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${config.geminiModel}:generateContent?key=${config.geminiApiKey}`;
   const prompt = `${systemPrompt}\n\n---\n\n${userPrompt}`;
 
-  const body = {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: {
-      maxOutputTokens: maxTokens,
-      temperature: useSearch ? 0.2 : 0.7,
-    },
+  const makeCall = async (withSearch) => {
+    const body = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: maxTokens,
+        temperature: withSearch ? 0.2 : 0.7,
+      },
+    };
+
+    if (withSearch) {
+      body.tools = [{ googleSearch: {} }];
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data?.error?.message || `Gemini API error (${response.status})`);
+    }
+
+    return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
   };
 
   if (useSearch) {
-    body.tools = [{ googleSearch: {} }];
+    try {
+      return await makeCall(true);
+    } catch (err) {
+      console.warn('Gemini Search Grounding failed or was restricted. Falling back to standard model generation. Error:', err.message);
+      return await makeCall(false);
+    }
   }
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data?.error?.message || `Gemini API error (${response.status})`);
-  }
-
-  return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+  return await makeCall(false);
 };
 
 const generateWithOpenAI = async (systemPrompt, userPrompt, maxTokens = 2048) => {
@@ -165,6 +178,14 @@ Be specific with numbers from the data where possible.`
   return text;
 };
 
+export const detectCategory = async (name, description = '') => {
+  const { text } = await generateText(
+    'You are an expert e-commerce cataloguer. Classify the product into exactly one of these standard categories: Electronics, Apparel, Accessories, Home & Kitchen, Sports & Outdoors, Beauty, Books, or Other. Return ONLY the category name.',
+    `Classify this product:\nName: ${name}\nDescription: ${description}`
+  );
+  return text.trim();
+};
+
 /** Full product intelligence pack — description, SEO, marketing, audience, features */
 export const generateFullProductInfo = async (data) => {
   const { text } = await generateText(
@@ -228,6 +249,7 @@ Return a JSON object with exactly these keys and real data:
 
 export const mockAIResponse = (type, data) => {
   const mocks = {
+    category: 'Electronics',
     description: `Introducing ${data.name} — a premium ${data.category} product crafted for quality and value. Ideal for customers who want reliability at $${data.price}. Features excellent build quality, great customer reviews potential, and strong market fit in the ${data.category} segment.`,
     tags: [data.category, data.name?.split(' ')[0], 'premium', 'bestseller', 'new arrival', 'trending', 'quality', 'shop now', 'ecommerce', 'deal'].filter(Boolean),
     caption: `Discover ${data.name}! Premium ${data.category} at just $${data.price}. Elevate your lifestyle today — limited stock available!`,

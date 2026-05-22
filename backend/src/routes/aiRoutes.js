@@ -9,6 +9,7 @@ import {
   generateFullInfo,
   salesInsights,
   fetchRealProductDataRoute,
+  detectCategoryRoute,
 } from '../controllers/aiController.js';
 import { protect } from '../middleware/auth.js';
 import { validate } from '../middleware/errorHandler.js';
@@ -27,5 +28,6 @@ router.post('/generate-social', validate(aiProductValidation), generateSocialRou
 router.post('/generate-full-info', validate(aiProductValidation), generateFullInfo);
 router.post('/fetch-real-product', fetchRealProductDataRoute);
 router.post('/sales-insights', salesInsights);
+router.post('/detect-category', validate(aiProductValidation), detectCategoryRoute);
 
 export default router;

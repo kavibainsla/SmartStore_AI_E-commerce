@@ -11,6 +11,7 @@ import {
   fetchRealProductData,
   safeAI,
   getAIStatus,
+  detectCategory,
 } from '../services/openaiService.js';
 import { getBusinessSummaryForAI } from '../services/analyticsService.js';
 
@@ -166,4 +167,19 @@ export const fetchRealProductDataRoute = asyncHandler(async (req, res) => {
   );
 
   res.json(wrap(result, { product: result.content }));
+});
+
+export const detectCategoryRoute = asyncHandler(async (req, res) => {
+  const { name, description } = req.body;
+  if (!name) {
+    return res.status(400).json({ success: false, message: 'Product name is required' });
+  }
+
+  const result = await safeAI(
+    () => detectCategory(name, description || ''),
+    'category',
+    { name, description }
+  );
+
+  res.json(wrap(result, { category: result.content }));
 });

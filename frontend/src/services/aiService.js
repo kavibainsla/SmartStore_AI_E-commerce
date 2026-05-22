@@ -10,4 +10,5 @@ export const aiService = {
   generateFullInfo: (data) => api.post('/ai/generate-full-info', data),
   fetchRealProduct: (query) => api.post('/ai/fetch-real-product', { query }),
   salesInsights: () => api.post('/ai/sales-insights'),
+  detectCategory: (data) => api.post('/ai/detect-category', data),
 };

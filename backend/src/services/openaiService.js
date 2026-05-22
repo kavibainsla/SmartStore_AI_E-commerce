@@ -14,4 +14,5 @@ export {
   safeAI,
   getActiveProvider,
   getAIStatus,
+  detectCategory,
 } from './aiProviderService.js';

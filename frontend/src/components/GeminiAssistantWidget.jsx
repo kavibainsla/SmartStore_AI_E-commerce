@@ -50,7 +50,7 @@ export const GeminiAssistantWidget = ({ product }) => {
         ...prev,
         {
           sender: 'ai',
-          text: `⚠️ Apologies, my database is offline or the Gemini context failed. But here is standard advice: the **${product.name}** is currently priced at **$${product.price}** with stock level of **${product.stock || 50}**. It is a fantastic choice in the **${product.category}** category!`,
+          text: `⚠️ Apologies, my database is offline or the Gemini context failed. But here is standard advice: the **${product.name}** is currently priced at **₹${product.price}** with stock level of **${product.stock || 50}**. It is a fantastic choice in the **${product.category}** category!`,
         },
       ]);
     } finally {
