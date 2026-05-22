@@ -4,7 +4,7 @@ import { HiOutlineShoppingBag } from 'react-icons/hi';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export const AuthLayout = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
     return (
@@ -14,7 +14,9 @@ export const AuthLayout = () => {
     );
   }
 
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated) {
+    return <Navigate to={user?.role === 'customer' ? '/' : '/dashboard'} replace />;
+  }
 
   return (
     <div className="flex min-h-screen">

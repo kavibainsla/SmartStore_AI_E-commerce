@@ -15,9 +15,14 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(form);
+      const res = await login(form);
+      const loggedUser = res?.data?.user;
       toast.success('Welcome back!');
-      navigate('/dashboard');
+      if (loggedUser?.role === 'customer') {
+        navigate('/');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
     } finally {

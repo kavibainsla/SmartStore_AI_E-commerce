@@ -22,4 +22,7 @@ export { AIGenerateButton } from './AIGenerateButton';
 export { AIContentPanel } from './AIContentPanel';
 export { ProductAIFullInfo } from './ProductAIFullInfo';
 export { GeminiProductSearch } from './GeminiProductSearch';
+export { CustomerHeader } from './CustomerHeader';
+export { CustomerCart } from './CustomerCart';
+export { GeminiAssistantWidget } from './GeminiAssistantWidget';
 

@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     password: { type: String, required: [true, 'Password is required'], minlength: 6, select: false },
-    role: { type: String, enum: ['admin', 'manager'], default: 'admin' },
+    role: { type: String, enum: ['admin', 'manager', 'customer'], default: 'customer' },
     avatar: { type: String, default: '' },
     settings: {
       theme: { type: String, enum: ['light', 'dark'], default: 'dark' },

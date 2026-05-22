@@ -13,7 +13,10 @@ export const getProducts = asyncHandler(async (req, res) => {
     lowStock,
   } = req.query;
 
-  const query = { createdBy: req.user._id };
+  const query = {};
+  if (req.user.role !== 'customer') {
+    query.createdBy = req.user._id;
+  }
 
   if (search) {
     query.$or = [
@@ -34,7 +37,8 @@ export const getProducts = asyncHandler(async (req, res) => {
     .skip(skip)
     .limit(parseInt(limit, 10));
 
-  const categories = await Product.distinct('category', { createdBy: req.user._id });
+  const categoriesQuery = req.user.role === 'customer' ? {} : { createdBy: req.user._id };
+  const categories = await Product.distinct('category', categoriesQuery);
 
   res.json({
     success: true,
@@ -50,7 +54,11 @@ export const getProducts = asyncHandler(async (req, res) => {
 });
 
 export const getProduct = asyncHandler(async (req, res) => {
-  const product = await Product.findOne({ _id: req.params.id, createdBy: req.user._id });
+  const query = { _id: req.params.id };
+  if (req.user.role !== 'customer') {
+    query.createdBy = req.user._id;
+  }
+  const product = await Product.findOne(query);
   if (!product) {
     return res.status(404).json({ success: false, message: 'Product not found' });
   }

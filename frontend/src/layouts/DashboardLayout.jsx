@@ -15,7 +15,7 @@ const pageTitles = {
 
 export const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -27,6 +27,10 @@ export const DashboardLayout = () => {
   }
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+
+  if (user && user.role !== 'admin' && user.role !== 'manager') {
+    return <Navigate to="/" replace />;
+  }
 
   const title = pageTitles[location.pathname] || 'Dashboard';
 
