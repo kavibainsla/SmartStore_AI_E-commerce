@@ -5,6 +5,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  checkoutProducts,
 } from '../controllers/productController.js';
 import { protect } from '../middleware/auth.js';
 import { validate } from '../middleware/errorHandler.js';
@@ -19,6 +20,7 @@ const router = Router();
 
 router.use(protect);
 
+router.post('/checkout', checkoutProducts);
 router.get('/', validate(productQueryValidation), getProducts);
 router.get('/:id', validate(productIdValidation), getProduct);
 router.post('/', validate(productValidation), createProduct);

@@ -1,18 +1,24 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import User from '../models/User.js';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, '../../.env') });
+
 import Product from '../models/Product.js';
+import User from '../models/User.js';
 import Analytics from '../models/Analytics.js';
 import { buildDashboardAnalytics } from '../services/analyticsService.js';
 
-dotenv.config();
-
 const BASE_IMAGE_URL = 'http://localhost:5173/products';
 
-const sampleProducts = [
+// Full product catalog with local images
+const fullProductCatalog = [
   {
     name: 'Wireless Pro Headphones',
-    description: 'Premium noise-cancelling wireless headphones with 40-hour battery life, Bluetooth 5.2, and crystal-clear sound.',
+    description: 'Premium noise-cancelling wireless headphones with 40-hour battery life, Bluetooth 5.2, and crystal-clear sound for audiophiles.',
     category: 'Electronics',
     image: `${BASE_IMAGE_URL}/headphones.png`,
     price: 249.99,
@@ -106,6 +112,7 @@ const sampleProducts = [
     revenue: 6479.28,
     status: 'active',
   },
+  // New products
   {
     name: 'Ultralight Running Shoes',
     description: 'Performance running shoes with responsive foam midsole, engineered mesh upper, and carbon-fiber plate for max speed.',
@@ -180,28 +187,45 @@ const sampleProducts = [
   },
 ];
 
-const seed = async () => {
+const run = async () => {
   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/smartstore_ai';
   await mongoose.connect(uri);
-  console.log('Connected to MongoDB');
+  console.log('Connected to MongoDB\n');
 
-  await Product.deleteMany({});
-  await Analytics.deleteMany({});
-  await User.deleteMany({ email: 'admin@smartstore.ai' });
+  // Find or create the admin user to link products
+  let adminUser = await User.findOne({ role: 'admin' });
+  if (!adminUser) {
+    adminUser = await User.create({
+      name: 'Admin User',
+      email: 'admin@smartstore.ai',
+      password: 'admin123',
+      role: 'admin',
+    });
+    console.log('Created admin user: admin@smartstore.ai');
+  } else {
+    console.log(`Using existing admin: ${adminUser.email}`);
+  }
 
-  const user = await User.create({
-    name: 'Admin User',
-    email: 'admin@smartstore.ai',
-    password: 'admin123',
-    role: 'admin',
-  });
+  // Drop all existing products and replace with full catalog
+  const deleted = await Product.deleteMany({});
+  console.log(`Cleared ${deleted.deletedCount} existing products.`);
 
-  const products = sampleProducts.map((p) => ({ ...p, createdBy: user._id }));
-  await Product.insertMany(products);
+  const productsToInsert = fullProductCatalog.map((p) => ({
+    ...p,
+    createdBy: adminUser._id,
+  }));
 
-  const dashboard = await buildDashboardAnalytics(user._id);
+  const inserted = await Product.insertMany(productsToInsert);
+  console.log(`\n✅ Inserted ${inserted.length} products successfully!\n`);
+
+  inserted.forEach((p) => console.log(`  - [${p.category}] ${p.name} ($${p.price})`));
+
+  // Rebuild analytics
+  console.log('\nRebuilding analytics...');
+  await Analytics.deleteMany({ userId: adminUser._id });
+  const dashboard = await buildDashboardAnalytics(adminUser._id);
   await Analytics.create({
-    userId: user._id,
+    userId: adminUser._id,
     totalRevenue: dashboard.totalRevenue,
     totalSales: dashboard.totalSales,
     totalProducts: dashboard.totalProducts,
@@ -216,12 +240,16 @@ const seed = async () => {
     })),
   });
 
-  console.log('Seed complete!');
-  console.log('Login: admin@smartstore.ai / admin123');
-  process.exit(0);
+  console.log('\n✅ Analytics rebuilt!');
+  console.log('==================================================');
+  console.log(`Total products in DB: ${inserted.length}`);
+  console.log(`Admin login: admin@smartstore.ai / admin123`);
+  console.log('==================================================\n');
+
+  await mongoose.disconnect();
 };
 
-seed().catch((err) => {
-  console.error(err);
+run().catch((err) => {
+  console.error('Error:', err.message);
   process.exit(1);
 });

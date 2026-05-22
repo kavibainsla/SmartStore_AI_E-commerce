@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { HiOutlineXMark, HiOutlineMinus, HiOutlinePlus, HiOutlineTrash, HiOutlineCreditCard, HiOutlineCheckCircle, HiOutlineSparkles, HiOutlineTruck } from 'react-icons/hi2';
+import { productService } from '../services/productService';
 
 export const CustomerCart = ({ isOpen, onClose, cartItems, onUpdateQuantity, onRemoveItem, onClearCart }) => {
   const [checkoutStep, setCheckoutStep] = useState(1); // 1: Cart, 2: Checkout Form, 3: Success
@@ -18,13 +19,32 @@ export const CustomerCart = ({ isOpen, onClose, cartItems, onUpdateQuantity, onR
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
 
-  const handleCheckoutSubmit = (e) => {
+  const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate server side verification and order routing
-    setTimeout(() => {
+    try {
       const orderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+      const trackingNumber = 'TRK' + Math.floor(100000000 + Math.random() * 900000000);
+
+      const itemsPayload = cartItems.map((item) => ({
+        product: item._id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      }));
+
+      await productService.checkout({
+        orderId,
+        trackingNumber,
+        items: itemsPayload,
+        subtotal,
+        shipping,
+        tax,
+        total,
+        address,
+      });
+
       const newOrder = {
         orderId,
         date: new Date().toLocaleDateString(),
@@ -35,18 +55,21 @@ export const CustomerCart = ({ isOpen, onClose, cartItems, onUpdateQuantity, onR
         total,
         address,
         status: 'AI Processing',
-        trackingNumber: 'TRK' + Math.floor(100000000 + Math.random() * 900000000),
+        trackingNumber,
       };
 
-      // Save order to LocalStorage history
       const prevOrders = JSON.parse(localStorage.getItem('orders') || '[]');
       localStorage.setItem('orders', JSON.stringify([newOrder, ...prevOrders]));
 
       setPlacedOrderInfo(newOrder);
-      setIsSubmitting(false);
       setCheckoutStep(3);
       onClearCart(); // Empty active cart
-    }, 2000);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Checkout failed.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetDrawer = () => {
@@ -150,7 +173,7 @@ export const CustomerCart = ({ isOpen, onClose, cartItems, onUpdateQuantity, onR
                                 </button>
                               </div>
                               <span className="text-xs font-extrabold text-slate-900 dark:text-white">
-                                ${item.price * item.quantity}
+                                ₹{item.price * item.quantity}
                               </span>
                             </div>
                           </div>
@@ -163,21 +186,21 @@ export const CustomerCart = ({ isOpen, onClose, cartItems, onUpdateQuantity, onR
                       <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
                         <div className="flex justify-between">
                           <span>Subtotal</span>
-                          <span className="font-semibold text-slate-900 dark:text-white">${subtotal.toFixed(2)}</span>
+                          <span className="font-semibold text-slate-900 dark:text-white">₹{subtotal.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Shipping</span>
                           <span className="font-semibold text-slate-900 dark:text-white">
-                            {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
+                            {shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Estimated Tax (8%)</span>
-                          <span className="font-semibold text-slate-900 dark:text-white">${tax.toFixed(2)}</span>
+                          <span className="font-semibold text-slate-900 dark:text-white">₹{tax.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between border-t border-slate-100 pt-3 text-sm font-extrabold dark:border-slate-800">
                           <span className="text-slate-900 dark:text-white">Total</span>
-                          <span className="text-brand-600 dark:text-brand-400">${total.toFixed(2)}</span>
+                          <span className="text-brand-600 dark:text-brand-400">₹{total.toFixed(2)}</span>
                         </div>
                       </div>
                       <button
@@ -303,7 +326,7 @@ export const CustomerCart = ({ isOpen, onClose, cartItems, onUpdateQuantity, onR
                 <div className="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
                   <div className="flex justify-between text-xs font-bold text-slate-800 dark:text-slate-200 mb-4">
                     <span>Payable Total:</span>
-                    <span className="text-brand-600 dark:text-brand-400 text-sm">${total.toFixed(2)}</span>
+                    <span className="text-brand-600 dark:text-brand-400 text-sm">₹{total.toFixed(2)}</span>
                   </div>
                   <div className="flex gap-3">
                     <button
@@ -324,7 +347,7 @@ export const CustomerCart = ({ isOpen, onClose, cartItems, onUpdateQuantity, onR
                           Processing Security...
                         </div>
                       ) : (
-                        `🔒 Pay $${total.toFixed(2)}`
+                        `🔒 Pay ₹${total.toFixed(2)}`
                       )}
                     </button>
                   </div>

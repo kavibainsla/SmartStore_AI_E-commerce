@@ -6,4 +6,5 @@ export const productService = {
   create: (data) => api.post('/products', data),
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
+  checkout: (data) => api.post('/products/checkout', data),
 };

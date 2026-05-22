@@ -1,4 +1,5 @@
 import Product from '../models/Product.js';
+import Order from '../models/Order.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { config } from '../config/env.js';
 
@@ -89,3 +90,59 @@ export const deleteProduct = asyncHandler(async (req, res) => {
   }
   res.json({ success: true, message: 'Product deleted' });
 });
+
+export const checkoutProducts = asyncHandler(async (req, res) => {
+  console.log("CHECKOUT REQUEST BODY:", req.body);
+  const {
+    orderId,
+    trackingNumber,
+    items,
+    subtotal,
+    shipping,
+    tax,
+    total,
+    address,
+  } = req.body;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ success: false, message: 'No items provided for checkout.' });
+  }
+
+  const updatedProducts = [];
+  for (const item of items) {
+    const productId = item._id || item.product;
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: `Product not found: ${productId}` });
+    }
+    if (product.stock < item.quantity) {
+      return res.status(400).json({ success: false, message: `Insufficient stock for product: ${product.name}` });
+    }
+
+    product.stock -= item.quantity;
+    product.sales = (product.sales || 0) + item.quantity;
+    product.revenue = (product.revenue || 0) + (product.price * item.quantity);
+    await product.save();
+    updatedProducts.push(product);
+  }
+
+  const order = await Order.create({
+    customer: req.user._id,
+    orderId: orderId || ('ORD-' + Math.floor(100000 + Math.random() * 900000)),
+    trackingNumber: trackingNumber || ('TRK' + Math.floor(100000000 + Math.random() * 900000000)),
+    items: items.map(item => ({
+      product: item._id || item.product,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    })),
+    subtotal,
+    shipping,
+    tax,
+    total,
+    address,
+  });
+
+  res.status(201).json({ success: true, message: 'Checkout processed successfully!', order, data: updatedProducts });
+});
+
